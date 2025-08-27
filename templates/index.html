@@ -70,6 +70,30 @@
   </section>
 
   <section class="card">
+  <h2>🔎 LAN-Scanner</h2>
+  <p class="muted">Scanne dein Subnetz nach aktiven Hosts & offenen Ports.</p>
+
+  <iframe
+    id="lanframe"
+    width="100%"
+    height="800"
+    style="border:none; border-radius:12px; background:transparent;"
+    loading="lazy"
+    referrerpolicy="no-referrer"
+  ></iframe>
+
+  <p style="margin-top:10px;">
+    <a id="lanlink" href="#" target="_blank">Im neuen Tab öffnen</a>
+  </p>
+</section>
+
+<script>
+  const base = window.location.protocol + '//' + window.location.hostname + ':5051';
+  document.getElementById('lanframe').src = base;
+  document.getElementById('lanlink').href = base;
+</script>
+  
+  <section class="card">
     <h2>Datenträger</h2>
     <table>
       <thead><tr><th>Mount</th><th>Belegt</th><th>Gesamt</th><th>%</th></tr></thead>
