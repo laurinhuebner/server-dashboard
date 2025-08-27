@@ -1,2 +1,7 @@
-# server-dashboard
-🌐 Web-Dashboard für System-Monitoring (CPU, RAM, Uptime, Netzwerk, Logs &amp; Dark Mode). Erstellt mit Flask &amp; psutil.
+### Server Dashboard
+- [**server-dashboard**](https://github.com/laurinhuebner/server-dashboard)  
+  *Ein minimalistisches Web-Dashboard (Flask), das Live-Infos von meinem Debian-Server anzeigt.*  
+
+<p align="center">
+  <img src="docs/screenshot_ui.jpg" alt="Server Dashboard Screenshot" width="70%" />
+</p>
