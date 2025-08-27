@@ -1,29 +1,273 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <title>Server Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Server Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>🌐 Server Dashboard</h1>
-        <p><b>Hostname:</b> {{ info.hostname }}</p>
-        <p><b>Betriebssystem:</b> {{ info.system }} {{ info.release }}</p>
-        <p><b>Uptime:</b> {{ info.uptime }}</p>
+<header>
+  <h1>📊 Server Dashboard</h1>
+  <div class="spacer"></div>
+  <button id="themeToggle" aria-label="Theme umschalten">🌙</button>
+</header>
 
-        <h2>Ressourcen</h2>
-        <ul>
-            <li>CPU-Auslastung: {{ info.cpu }}%</li>
-            <li>RAM-Auslastung: {{ info.memory }}%</li>
-            <li>Speicher-Auslastung: {{ info.disk }}%</li>
-        </ul>
-
-        <h2>Netzwerk</h2>
-        <ul>
-            <li>Gesendet: {{ (info.net.bytes_sent / 1024 / 1024) | round(2) }} MB</li>
-            <li>Empfangen: {{ (info.net.bytes_recv / 1024 / 1024) | round(2) }} MB</li>
-        </ul>
+<main>
+  <section class="card">
+    <h2>System</h2>
+    <div class="grid">
+      <div><span class="label">Hostname</span><span id="host">{{ data.hostname }}</span></div>
+      <div><span class="label">OS</span><span id="os">{{ data.system }}</span></div>
+      <div><span class="label">Zeit</span><span id="time">{{ data.time }}</span></div>
+      <div><span class="label">Uptime</span><span id="uptime">{{ data.uptime }}</span></div>
     </div>
+  </section>
+
+  <section class="card">
+    <h2>Ressourcen</h2>
+    <div class="grid four">
+      <div class="meter">
+        <div class="k">CPU</div>
+        <div class="v" id="cpu">{{ data.cpu_percent }}%</div>
+        <div class="bar"><div id="cpuBar" style="width: {{ data.cpu_percent }}%"></div></div>
+      </div>
+
+      <div class="meter">
+        <div class="k">RAM</div>
+        <div class="v" id="ram">{{ data.mem.percent }}%</div>
+        <div class="bar"><div id="ramBar" style="width: {{ data.mem.percent }}%"></div></div>
+        <small id="ramDetail">{{ (data.mem.used/1024/1024/1024)|round(1) }} / {{ (data.mem.total/1024/1024/1024)|round(1) }} GB</small>
+      </div>
+
+      <div class="meter">
+        <div class="k">Swap</div>
+        <div class="v" id="swap">{{ data.swap.percent }}%</div>
+        <div class="bar"><div id="swapBar" style="width: {{ data.swap.percent }}%"></div></div>
+      </div>
+
+      <div class="meter">
+        <div class="k">CPU-Temp</div>
+        <div class="v" id="ct">{{ data.cpu_temp if data.cpu_temp else '–' }}{{ '°C' if data.cpu_temp else '' }}</div>
+      </div>
+    </div>
+
+    <div class="charts">
+      <canvas id="cpuChart" height="80"></canvas>
+      <canvas id="ramChart" height="80"></canvas>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Netzwerk</h2>
+    <div class="grid">
+      <div><span class="label">Up</span><span id="up">{{ data.net.up_rate }}</span></div>
+      <div><span class="label">Down</span><span id="down">{{ data.net.down_rate }}</span></div>
+      <div><span class="label">Gesendet</span><span id="tx">{{ data.net.sent_total }}</span></div>
+      <div><span class="label">Empfangen</span><span id="rx">{{ data.net.recv_total }}</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Datenträger</h2>
+    <table>
+      <thead><tr><th>Mount</th><th>Belegt</th><th>Gesamt</th><th>%</th></tr></thead>
+      <tbody id="disks">
+        {% for d in data.disks %}
+        <tr>
+          <td>{{ d.mount }}</td>
+          <td>{{ (d.used/1024/1024/1024)|round(1) }} GB</td>
+          <td>{{ (d.total/1024/1024/1024)|round(1) }} GB</td>
+          <td>
+            <div class="bar tiny"><div style="width: {{ d.percent }}%"></div></div>
+            {{ d.percent }}%
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>Dienste</h2>
+    {% if data.services %}
+      <ul id="svc">
+        {% for s in data.services %}
+          <li><strong>{{ s.name }}</strong> — <span class="pill {{ 'ok' if s.status=='active' else 'bad' }}">{{ s.status }}</span></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">Keine Dienste konfiguriert. Trage sie in <code>config.toml</code> ein.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Docker</h2>
+    {% if data.docker %}
+      <ul id="dock">
+        {% for c in data.docker %}
+          <li><strong>{{ c.name }}</strong> — {{ c.status }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">Keine Container oder Docker nicht installiert.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Top Prozesse (CPU)</h2>
+    <table>
+      <thead><tr><th>PID</th><th>Name</th><th>CPU %</th><th>RAM %</th></tr></thead>
+      <tbody id="top">
+        {% for p in data.top %}
+        <tr><td>{{ p.pid }}</td><td>{{ p.name }}</td><td>{{ '%.1f'|format(p.cpu_percent) }}</td><td>{{ '%.1f'|format(p.memory_percent) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>📜 Letzte Logs</h2>
+    <pre id="logs">
+{% for line in [] %}{% endfor %}
+    </pre>
+    <small class="muted">Hinweis: Zugriff auf <code>/var/log/syslog</code> oder <code>/var/log/messages</code> kann Rechte erfordern.</small>
+  </section>
+</main>
+
+<footer>© <span id="year"></span> Home Server</footer>
+
+<script>
+  // Theme Toggle
+  const root = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  const pref = localStorage.getItem('theme');
+  if (pref === 'dark' || (!pref && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    root.classList.add('dark'); btn.textContent = '☀️';
+  }
+  btn.addEventListener('click', () => {
+    root.classList.toggle('dark');
+    const dark = root.classList.contains('dark');
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+    btn.textContent = dark ? '☀️' : '🌙';
+  });
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Charts
+  const labels=[], cpuData=[], ramData=[];
+  const cpuChart = new Chart(document.getElementById('cpuChart').getContext('2d'), {
+    type:'line',
+    data:{ labels, datasets:[{label:'CPU %', data:cpuData}] },
+    options:{ responsive:true, animation:false, scales:{y:{min:0,max:100}} }
+  });
+  const ramChart = new Chart(document.getElementById('ramChart').getContext('2d'), {
+    type:'line',
+    data:{ labels, datasets:[{label:'RAM %', data:ramData}] },
+    options:{ responsive:true, animation:false, scales:{y:{min:0,max:100}} }
+  });
+  function pushPoint(cpu,ram){
+    const ts = new Date().toLocaleTimeString();
+    labels.push(ts); cpuData.push(Number(cpu)); ramData.push(Number(ram));
+    if(labels.length>30){ labels.shift(); cpuData.shift(); ramData.shift(); }
+    cpuChart.update('none'); ramChart.update('none');
+  }
+
+  // Live Update
+  async function refresh(){
+    try{
+      const headers = {};
+      const token = localStorage.getItem('dashSecret');
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      const rs = await fetch('/api/stats', {cache:'no-store', headers});
+      if (rs.status === 401) {
+        const s = prompt('Passwort (Bearer Secret):');
+        if (s){ localStorage.setItem('dashSecret', s); location.reload(); }
+        return;
+      }
+      if (!rs.ok) return;
+      const d = await rs.json();
+
+      // System
+      document.getElementById('time').textContent = d.time;
+      document.getElementById('uptime').textContent = d.uptime;
+
+      // Ressourcen
+      const cpu = d.cpu_percent.toFixed(0);
+      const ram = d.mem.percent.toFixed(0);
+      const swap = d.swap.percent.toFixed(0);
+      document.getElementById('cpu').textContent = cpu + '%';
+      document.getElementById('ram').textContent = ram + '%';
+      document.getElementById('swap').textContent = swap + '%';
+      document.getElementById('cpuBar').style.width = cpu + '%';
+      document.getElementById('ramBar').style.width = ram + '%';
+      document.getElementById('swapBar').style.width = swap + '%';
+      document.getElementById('ramDetail').textContent =
+        (d.mem.used/1024/1024/1024).toFixed(1) + ' / ' + (d.mem.total/1024/1024/1024).toFixed(1) + ' GB';
+      document.getElementById('ct').textContent = d.cpu_temp ? d.cpu_temp.toFixed(1) + '°C' : '–';
+
+      // Netzwerk
+      document.getElementById('up').textContent = d.net.up_rate;
+      document.getElementById('down').textContent = d.net.down_rate;
+      document.getElementById('tx').textContent = d.net.sent_total;
+      document.getElementById('rx').textContent = d.net.recv_total;
+
+      // Disks
+      const tbody = document.getElementById('disks');
+      tbody.innerHTML = '';
+      d.disks.forEach(di => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${di.mount}</td>
+          <td>${(di.used/1024/1024/1024).toFixed(1)} GB</td>
+          <td>${(di.total/1024/1024/1024).toFixed(1)} GB</td>
+          <td>
+            <div class="bar tiny"><div style="width:${di.percent}%"></div></div>
+            ${di.percent}%
+          </td>`;
+        tbody.appendChild(tr);
+      });
+
+      // Dienste
+      const svc = document.getElementById('svc');
+      if (svc && d.services) {
+        svc.innerHTML = d.services.map(s => 
+          `<li><strong>${s.name}</strong> — <span class="pill ${s.status==='active'?'ok':'bad'}">${s.status}</span></li>`
+        ).join('');
+      }
+
+      // Docker
+      const dock = document.getElementById('dock');
+      if (dock) {
+        dock.innerHTML = (d.docker || []).map(c => 
+          `<li><strong>${c.name}</strong> — ${c.status}</li>`
+        ).join('') || '<li class="muted">Keine Container</li>';
+      }
+
+      // Top-Prozesse
+      const top = document.getElementById('top');
+      if (top) {
+        top.innerHTML = (d.top || []).map(p => 
+          `<tr><td>${p.pid}</td><td>${p.name}</td><td>${p.cpu_percent.toFixed(1)}</td><td>${p.memory_percent.toFixed(1)}</td></tr>`
+        ).join('');
+      }
+
+      // Logs (alle 15s)
+      if ((Date.now()/1000|0) % 15 === 0) {
+        const rl = await fetch('/api/logs', {cache:'no-store', headers});
+        if (rl.ok) {
+          const lines = await rl.json();
+          document.getElementById('logs').textContent = lines.join('\n');
+        }
+      }
+
+      // Charts updaten
+      pushPoint(cpu, ram);
+
+    } catch(e) { /* ignore */ }
+  }
+  setInterval(refresh, 5000);
+</script>
 </body>
 </html>
