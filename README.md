@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./banner.png" alt="Server Dashboard Banner" width="100%">
+</p>
+
 # 📊 Server Dashboard
 
 Ein leichtgewichtiges, Flask-basiertes Dashboard zur Überwachung eines Home- oder Root-Servers.  
