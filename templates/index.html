@@ -11,6 +11,14 @@
 <header>
   <h1>📊 Server Dashboard</h1>
   <div class="spacer"></div>
+
+  <!-- Wetter Gadget oben rechts -->
+  <div id="weather" class="weather-card">
+    <span id="weatherIcon">⛅</span>
+    <span id="weatherTemp">--°C</span>
+    <small>{{ weather.city }}</small>
+  </div>
+
   <button id="themeToggle" aria-label="Theme umschalten">🌙</button>
 </header>
 
@@ -70,29 +78,27 @@
   </section>
 
   <section class="card">
-  <h2>🔎 LAN-Scanner</h2>
-  <p class="muted">Scanne dein Subnetz nach aktiven Hosts & offenen Ports.</p>
+    <h2>🔎 LAN-Scanner</h2>
+    <p class="muted">Scanne dein Subnetz nach aktiven Hosts & offenen Ports.</p>
+    <iframe
+      id="lanframe"
+      width="100%"
+      height="800"
+      style="border:none; border-radius:12px; background:transparent;"
+      loading="lazy"
+      referrerpolicy="no-referrer"
+    ></iframe>
+    <p style="margin-top:10px;">
+      <a id="lanlink" href="#" target="_blank">Im neuen Tab öffnen</a>
+    </p>
+  </section>
 
-  <iframe
-    id="lanframe"
-    width="100%"
-    height="800"
-    style="border:none; border-radius:12px; background:transparent;"
-    loading="lazy"
-    referrerpolicy="no-referrer"
-  ></iframe>
+  <script>
+    const base = window.location.protocol + '//' + window.location.hostname + ':5051';
+    document.getElementById('lanframe').src = base;
+    document.getElementById('lanlink').href = base;
+  </script>
 
-  <p style="margin-top:10px;">
-    <a id="lanlink" href="#" target="_blank">Im neuen Tab öffnen</a>
-  </p>
-</section>
-
-<script>
-  const base = window.location.protocol + '//' + window.location.hostname + ':5051';
-  document.getElementById('lanframe').src = base;
-  document.getElementById('lanlink').href = base;
-</script>
-  
   <section class="card">
     <h2>Datenträger</h2>
     <table>
@@ -256,7 +262,7 @@
       // Dienste
       const svc = document.getElementById('svc');
       if (svc && d.services) {
-        svc.innerHTML = d.services.map(s => 
+        svc.innerHTML = d.services.map(s =>
           `<li><strong>${s.name}</strong> — <span class="pill ${s.status==='active'?'ok':'bad'}">${s.status}</span></li>`
         ).join('');
       }
@@ -264,7 +270,7 @@
       // Docker
       const dock = document.getElementById('dock');
       if (dock) {
-        dock.innerHTML = (d.docker || []).map(c => 
+        dock.innerHTML = (d.docker || []).map(c =>
           `<li><strong>${c.name}</strong> — ${c.status}</li>`
         ).join('') || '<li class="muted">Keine Container</li>';
       }
@@ -272,7 +278,7 @@
       // Top-Prozesse
       const top = document.getElementById('top');
       if (top) {
-        top.innerHTML = (d.top || []).map(p => 
+        top.innerHTML = (d.top || []).map(p =>
           `<tr><td>${p.pid}</td><td>${p.name}</td><td>${p.cpu_percent.toFixed(1)}</td><td>${p.memory_percent.toFixed(1)}</td></tr>`
         ).join('');
       }
@@ -292,6 +298,31 @@
     } catch(e) { /* ignore */ }
   }
   setInterval(refresh, 5000);
+
+  // Wetter (Open-Meteo) – Koordinaten aus Server via Jinja
+  async function loadWeather() {
+    try {
+      const lat = {{ weather.lat }};
+      const lon = {{ weather.lon }};
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode`;
+      const rs = await fetch(url);
+      if (!rs.ok) return;
+      const d = await rs.json();
+      const temp = d.current.temperature_2m.toFixed(0);
+      const code = d.current.weathercode;
+
+      const icons = {
+        0:"☀️", 1:"🌤️", 2:"⛅", 3:"☁️",
+        45:"🌫️", 48:"🌫️",
+        51:"🌦️", 61:"🌧️", 71:"❄️",
+        80:"🌧️", 95:"⛈️"
+      };
+      document.getElementById("weatherTemp").textContent = temp + "°C";
+      document.getElementById("weatherIcon").textContent = icons[code] || "⛅";
+    } catch(e) { console.warn("Weather fetch failed", e); }
+  }
+  loadWeather();
+  setInterval(loadWeather, 15*60*1000);
 </script>
 </body>
 </html>
