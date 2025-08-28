@@ -51,3 +51,12 @@ footer{color:var(--muted);text-align:center;padding:24px}
 .pill.ok{background:#153e2b;color:#6be3a1}
 .pill.bad{background:#3e1520;color:#ff9db5}
 .charts{margin-top:16px}
+
+/* Wetter Gadget */
+.weather-card{
+  display:flex; align-items:center; gap:6px;
+  background:var(--card); border:1px solid var(--border);
+  padding:4px 10px; border-radius:12px;
+  font-weight:600; font-size:14px;
+}
+.weather-card span:first-child{font-size:20px;}
