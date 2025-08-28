@@ -16,3 +16,12 @@ Zeigt Systemressourcen, Netzwerk, Dienste, Docker-Container, Prozesse und Logs a
 - **Logs**: Letzte Einträge aus `/var/log/syslog` oder `/var/log/messages`
 - **🔎 LAN-Scanner**: Integrierter Port- & Hostscanner (läuft auf Port `5051`, eingebettet als iFrame)
 - **☀️ Wetter-Widget**: Zeigt aktuelle Temperatur und Wetterlage am Server-Standort (oben rechts)
+
+## 📸 Screenshots
+
+Ein Beispiel, wie das Dashboard aussieht:
+
+![Server Dashboard Screenshot](docs/screenshot_ui.jpg)
+
+> Hinweis: Der Screenshot zeigt Systemressourcen, Netzwerk, LAN-Scanner (iFrame)  
+> und das neue Wetter-Widget oben rechts.
