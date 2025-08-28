@@ -1,4 +1,4 @@
-import os, time, socket, platform, datetime, subprocess
+import os, time, socket, platform, datetime, subprocess, requests
 import psutil
 from flask import Flask, jsonify, render_template, request, abort
 
@@ -6,23 +6,50 @@ from flask import Flask, jsonify, render_template, request, abort
 PORT = int(os.environ.get("PORT", "5050"))
 SECRET = os.environ.get("DASHBOARD_SECRET", "")  # optionales Bearer-Token
 
-# Optional: Dienste-Liste aus config.toml
+# Optional: Dienste-Liste & Wetter aus config.toml
 SERVICES = []
+WEATHER = {"city": "Emden", "lat": 53.3667, "lon": 7.2167}
+
 try:
     import tomllib  # Py 3.11+
 except Exception:
     tomllib = None
 
 def load_services_from_toml():
-    global SERVICES
+    """Services + Wetter aus config.toml laden (mit Geocoding-Fallback)."""
+    global SERVICES, WEATHER
     path = "config.toml"
     if tomllib and os.path.exists(path):
         try:
             with open(path, "rb") as f:
                 cfg = tomllib.load(f)
             SERVICES = cfg.get("services", {}).get("list", [])
-        except Exception:
-            SERVICES = []
+
+            w = cfg.get("weather", {})
+            if w:
+                WEATHER["city"] = w.get("city", WEATHER["city"])
+                lat = w.get("latitude")
+                lon = w.get("longitude")
+                if lat and lon:
+                    WEATHER["lat"] = float(lat)
+                    WEATHER["lon"] = float(lon)
+                else:
+                    # Fallback: Stadt -> Koordinaten (OpenStreetMap Nominatim)
+                    try:
+                        r = requests.get(
+                            "https://nominatim.openstreetmap.org/search",
+                            params={"q": WEATHER["city"], "format": "json", "limit": 1},
+                            headers={"User-Agent": "ServerDashboard/1.0"},
+                            timeout=5
+                        )
+                        if r.ok and r.json():
+                            loc = r.json()[0]
+                            WEATHER["lat"] = float(loc["lat"])
+                            WEATHER["lon"] = float(loc["lon"])
+                    except Exception as e:
+                        print("Geocoding fehlgeschlagen:", e)
+        except Exception as e:
+            print("Config laden fehlgeschlagen:", e)
     else:
         SERVICES = []
 
@@ -182,7 +209,7 @@ def build_stats():
 @app.get("/")
 def index():
     require_auth()
-    return render_template("index.html", data=build_stats())
+    return render_template("index.html", data=build_stats(), weather=WEATHER)
 
 @app.get("/api/stats")
 def api_stats():
