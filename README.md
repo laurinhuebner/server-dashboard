@@ -23,5 +23,3 @@ Ein Beispiel, wie das Dashboard aussieht:
 
 ![Server Dashboard Screenshot](docs/screenshot_ui.jpg)
 
-> Hinweis: Der Screenshot zeigt Systemressourcen, Netzwerk, LAN-Scanner (iFrame)  
-> und das neue Wetter-Widget oben rechts.
