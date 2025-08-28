@@ -1,0 +1,11 @@
+# Services, die im Dashboard überwacht werden sollen
+[services]
+list = ["nginx", "postgresql", "ssh"]
+
+# Wetter-Einstellungen
+[weather]
+city = "Emden"
+
+# Optional (falls du die Koordinaten selbst setzen willst, sonst wird automatisch Geocoding genutzt)
+# latitude = 53.3667
+# longitude = 7.2167
