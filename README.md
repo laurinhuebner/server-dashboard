@@ -25,5 +25,5 @@ Zeigt Systemressourcen, Netzwerk, Dienste, Docker-Container, Prozesse und Logs a
 
 Ein Beispiel, wie das Dashboard aussieht:
 
-![Server Dashboard Screenshot](docs/screenshot_ui.jpg)
+![Server Dashboard Screenshot](docs/screenshot_ui.png)
 
