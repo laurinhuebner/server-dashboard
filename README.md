@@ -1,23 +1,25 @@
-# 🖥️ Server Dashboard
+# 📊 Server Dashboard
 
-Ein leichtgewichtiges Web-Dashboard für meinen Debian-Server, gebaut mit **Flask** und **psutil**.  
-Es zeigt die wichtigsten Systeminformationen wie CPU-, RAM- und Festplattenauslastung, Hostname, Uptime und Netzwerk-Statistiken direkt im Browser an.  
+Ein leichtgewichtiges, Flask-basiertes Dashboard zur Überwachung eines Home- oder Root-Servers.  
+Zeigt Systemressourcen, Netzwerk, Dienste, Docker-Container, Prozesse und Logs an – alles in einer sauberen Weboberfläche.  
 
----
+## ✨ Features
 
-## 🚀 Features
-- Anzeige von **CPU-Auslastung, RAM & Festplattenplatz**  
-- **Systeminformationen** wie Hostname, Betriebssystem und Uptime  
-- **Netzwerk-Statistiken** (gesendete/empfangene Daten)  
-- Einfach über den Browser erreichbar (`http://<server-ip>:5050`)  
+- **Systeminfos**: Hostname, OS, Uptime, aktuelle Uhrzeit
+- **Ressourcen**: CPU-Last, RAM, Swap, CPU-Temperatur
+- **Charts**: Historische CPU- & RAM-Auslastung (Chart.js)
+- **Netzwerk**: Up/Downspeed, gesendete & empfangene Daten
+- **Datenträger**: Übersicht über Mounts, Belegung und Prozente
+- **Dienste**: Status beliebiger systemd-Services (`config.toml`)
+- **Docker**: Laufende Container & Status
+- **Top-Prozesse**: CPU/RAM-intensive Prozesse
+- **Logs**: Letzte Einträge aus `/var/log/syslog` oder `/var/log/messages`
+- **🔎 LAN-Scanner**: Integrierter Port- & Hostscanner (läuft auf Port `5051`, eingebettet als iFrame)
+- **☀️ Wetter-Widget**: Zeigt aktuelle Temperatur und Wetterlage am Server-Standort (oben rechts)
 
----
+## 🚀 Installation
 
-## 📸 Screenshot
-
-<p align="center">
-  <img src="docs/screenshot_ui.jpg" alt="Server Dashboard Screenshot" width="70%" />
-</p>
-
----
-
+1. Repository klonen:
+   ```bash
+   git clone https://github.com/laurinhuebner/server-dashboard.git
+   cd server-dashboard
